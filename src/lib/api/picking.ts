@@ -1,4 +1,12 @@
 import { request, getToken, mapPickingList } from "./request";
+import type {
+  RawPickingListsResponse,
+  RawPickingListDetail,
+  RawDashboardStatsResponse,
+  RawCompletePickingResponse,
+  RawUploadResponse,
+} from "./response-types";
+import type { PickingList } from "../types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -23,7 +31,7 @@ export interface ItemUpdate {
 // ---- Endpoints ----
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  const data: any = await request("GET", "/api/picking/dashboard");
+  const data = await request<RawDashboardStatsResponse>("GET", "/api/picking/dashboard");
   return {
     totalPicking: data.total_picking,
     draftCount: data.draft_count,
@@ -34,32 +42,35 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-export async function fetchPickingLists(): Promise<any[]> {
-  const data: any = await request("GET", "/api/picking/");
+export async function fetchPickingLists(): Promise<PickingList[]> {
+  const data = await request<RawPickingListsResponse>("GET", "/api/picking/");
   return data.lists.map(mapPickingList);
 }
 
-export async function fetchPickingListDetail(id: string): Promise<any> {
-  const data: any = await request("GET", `/api/picking/${id}`);
+export async function fetchPickingListDetail(id: string): Promise<PickingList> {
+  const data = await request<RawPickingListDetail>("GET", `/api/picking/${id}`);
   return mapPickingList(data);
 }
 
-export async function updatePickingItems(listId: string, items: ItemUpdate[]): Promise<any> {
-  const data: any = await request("PUT", `/api/picking/${listId}/items`, items);
+export async function updatePickingItems(
+  listId: string,
+  items: ItemUpdate[],
+): Promise<PickingList> {
+  const data = await request<RawPickingListDetail>(
+    "PUT",
+    `/api/picking/${listId}/items`,
+    items,
+  );
   return mapPickingList(data);
 }
 
 export async function completePicking(
   listId: string,
-): Promise<{ status: string; debt: number }> {
+): Promise<RawCompletePickingResponse> {
   return request("POST", `/api/picking/${listId}/complete`);
 }
 
-export async function uploadExcel(file: File): Promise<{
-  status: string;
-  imported_count: number;
-  lists: any[];
-}> {
+export async function uploadExcel(file: File): Promise<RawUploadResponse> {
   const headers: Record<string, string> = {};
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -76,18 +87,29 @@ export async function uploadExcel(file: File): Promise<{
 
 // ---- Handover (sub-resource of picking) ----
 
+export interface HandoverCreateRequest {
+  admin_name: string;
+  driver_name: string;
+  signature_admin?: string | null;
+  signature_driver?: string | null;
+}
+
+export interface HandoverResponse {
+  created_at: string;
+  created_by: string;
+  admin_name: string;
+  driver_name: string;
+  signature_admin_url: string;
+  signature_driver_url: string;
+}
+
 export async function createHandover(
   listId: string,
-  body: {
-    admin_name: string;
-    driver_name: string;
-    signature_admin?: string | null;
-    signature_driver?: string | null;
-  },
-): Promise<any> {
+  body: HandoverCreateRequest,
+): Promise<HandoverResponse> {
   return request("POST", `/api/picking/${listId}/handover`, body);
 }
 
-export async function fetchHandover(listId: string): Promise<any> {
+export async function fetchHandover(listId: string): Promise<HandoverResponse | null> {
   return request("GET", `/api/picking/${listId}/handover`);
 }

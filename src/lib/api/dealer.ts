@@ -1,5 +1,6 @@
 import { request, mapSettlement } from "./request";
 import type { DealerConfirmAction, Settlement } from "../types";
+import type { RawDealerItemsResponse, RawDealerItemEntry } from "./response-types";
 
 // ---- Types ----
 
@@ -23,14 +24,29 @@ export interface DealerItemEntry {
   settlements: Settlement[];
 }
 
+export interface ConfirmDealerItemRequest {
+  picking_item_id: string;
+  status: DealerConfirmAction;
+  signature_dealer?: string | null;
+  signature_driver?: string | null;
+  return_info?: { driver: string; return_date: string; notes?: string } | null;
+}
+
+export interface ConfirmDealerItemResponse {
+  id: string;
+  picking_item_id: string;
+  dealer_code: string;
+  status: string;
+}
+
 // ---- Endpoints ----
 
 export async function fetchDealerItems(pickingListId?: string): Promise<DealerItemEntry[]> {
   const path = pickingListId
     ? `/api/dealer/items/${pickingListId}`
     : "/api/dealer/items";
-  const data: any = await request("GET", path);
-  return (data.items ?? []).map((i: any) => ({
+  const data = await request<RawDealerItemsResponse>("GET", path);
+  return (data.items ?? []).map((i: RawDealerItemEntry) => ({
     picking_list_id: i.picking_list_id,
     picking_id: i.picking_id,
     date: i.date,
@@ -51,12 +67,8 @@ export async function fetchDealerItems(pickingListId?: string): Promise<DealerIt
   }));
 }
 
-export async function confirmDealerItem(body: {
-  picking_item_id: string;
-  status: DealerConfirmAction;
-  signature_dealer?: string | null;
-  signature_driver?: string | null;
-  return_info?: { driver: string; return_date: string; notes?: string } | null;
-}): Promise<any> {
+export async function confirmDealerItem(
+  body: ConfirmDealerItemRequest,
+): Promise<ConfirmDealerItemResponse> {
   return request("POST", "/api/dealer/confirm", body);
 }

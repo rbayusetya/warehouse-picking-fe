@@ -7,7 +7,19 @@ import type {
   Settlement,
   DealerInfo,
   DealerReturn,
+  DealerConfirmAction,
 } from "../types";
+import type {
+  RawUserResponse,
+  RawSettlement,
+  RawDealerInfo,
+  RawDealerReturn,
+  RawDealerConfirmation,
+  RawPickingItem,
+  RawHistoryEntry,
+  RawHandover,
+  RawPickingListDetail,
+} from "./response-types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -47,18 +59,18 @@ export async function request<T>(method: string, path: string, body?: unknown): 
 
 // ---- Mappers ----
 
-export function mapUser(data: any): User {
+export function mapUser(data: RawUserResponse): User {
   return {
     username: data.username,
     name: data.name,
-    role: data.role,
+    role: data.role as User["role"],
     roleLabel: data.role_label,
     dealerCode: data.dealer_code ?? undefined,
     expedition: data.expedition ?? undefined,
   };
 }
 
-export function mapSettlement(data: any): Settlement {
+export function mapSettlement(data: RawSettlement): Settlement {
   return {
     qty: data.qty,
     date: data.date,
@@ -69,12 +81,11 @@ export function mapSettlement(data: any): Settlement {
   };
 }
 
-export function mapDealerInfo(data: any): DealerInfo {
+export function mapDealerInfo(data: RawDealerInfo): DealerInfo {
   return { noSo: data.no_so ?? "", code: data.code, dealer: data.dealer, qty: data.qty };
 }
 
-export function mapDealerReturn(data: any): DealerReturn | undefined {
-  if (!data) return undefined;
+export function mapDealerReturn(data: RawDealerReturn): DealerReturn {
   return {
     driver: data.driver,
     returnDate: data.return_date,
@@ -85,23 +96,23 @@ export function mapDealerReturn(data: any): DealerReturn | undefined {
 }
 
 export function mapDealerConfirmations(
-  items: any[],
+  items: RawDealerConfirmation[],
 ): Record<string, "pending" | "match" | "shortage" | "excess"> {
   const map: Record<string, "pending" | "match" | "shortage" | "excess"> = {};
   for (const dc of items) {
-    map[dc.dealer_code] = dc.status as any;
+    map[dc.dealer_code] = dc.status as "pending" | "match" | "shortage" | "excess";
   }
   return map;
 }
 
-export function mapDealerReturnForItem(items: any[]): DealerReturn | undefined {
+export function mapDealerReturnForItem(items: RawDealerConfirmation[]): DealerReturn | undefined {
   for (const dc of items) {
     if (dc.return_record) return mapDealerReturn(dc.return_record);
   }
   return undefined;
 }
 
-export function mapPickingItem(data: any): PickingItem {
+export function mapPickingItem(data: RawPickingItem): PickingItem {
   return {
     id: data.id,
     code: data.code,
@@ -124,11 +135,11 @@ export function mapPickingItem(data: any): PickingItem {
   };
 }
 
-export function mapHistoryEntry(data: any): HistoryEntry {
+export function mapHistoryEntry(data: RawHistoryEntry): HistoryEntry {
   return { at: data.at, by: data.by ?? "", text: data.text };
 }
 
-export function mapHandover(data: any): Handover | null {
+export function mapHandover(data: RawHandover | null): Handover | null {
   if (!data) return null;
   return {
     at: data.created_at ?? "",
@@ -140,7 +151,7 @@ export function mapHandover(data: any): Handover | null {
   };
 }
 
-export function mapPickingList(data: any): PickingList {
+export function mapPickingList(data: RawPickingListDetail): PickingList {
   return {
     id: data.picking_id || data.id,
     date: data.date,
@@ -148,7 +159,7 @@ export function mapPickingList(data: any): PickingList {
     expedition: data.expedition,
     plate: data.plate ?? "",
     driver: data.driver,
-    status: data.status ?? "draft",
+    status: data.status as PickingList["status"],
     handover: mapHandover(data.handover),
     history: (data.history ?? []).map(mapHistoryEntry),
     items: (data.items ?? []).map(mapPickingItem),

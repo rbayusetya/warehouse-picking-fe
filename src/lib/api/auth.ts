@@ -1,8 +1,9 @@
 import type { User } from "../types";
 import { request, mapUser, setAuthCookie, clearAuthCookie } from "./request";
+import type { RawLoginResponse, RawUserResponse } from "./response-types";
 
 export async function apiLogin(username: string, password: string): Promise<User> {
-  const data: any = await request("POST", "/api/auth/login", { username, password });
+  const data = await request<RawLoginResponse>("POST", "/api/auth/login", { username, password });
   localStorage.setItem("auth_token", data.access_token);
   setAuthCookie(data.access_token);
   const user = mapUser(data);
@@ -12,7 +13,7 @@ export async function apiLogin(username: string, password: string): Promise<User
 
 export async function apiFetchMe(): Promise<User | null> {
   try {
-    const data: any = await request("GET", "/api/auth/me");
+    const data = await request<RawUserResponse>("GET", "/api/auth/me");
     return mapUser(data);
   } catch {
     return null;

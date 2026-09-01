@@ -1,4 +1,5 @@
 import { request } from "./request";
+import type { RawDebtsResponse } from "./response-types";
 
 // ---- Types ----
 
@@ -22,11 +23,29 @@ export interface DebtRow {
   debt: number;
 }
 
+export interface PayDebtRequest {
+  picking_item_id: string;
+  qty: number;
+  date: string;
+  driver: string;
+  note?: string;
+}
+
+export interface PayDebtResponse {
+  id: string;
+  picking_item_id: string;
+  qty: number;
+  date: string;
+  driver: string;
+  note: string;
+  settlement?: { id: string };
+}
+
 // ---- Endpoints ----
 
 export async function fetchDebts(): Promise<DebtRow[]> {
-  const data: any = await request("GET", "/api/debts/");
-  return (data.rows ?? []).map((r: any) => ({
+  const data = await request<RawDebtsResponse>("GET", "/api/debts/");
+  return (data.rows ?? []).map((r) => ({
     list: r.picking_list
       ? {
           id: r.picking_list.id,
@@ -51,12 +70,6 @@ export async function fetchDebts(): Promise<DebtRow[]> {
   }));
 }
 
-export async function payDebt(body: {
-  picking_item_id: string;
-  qty: number;
-  date: string;
-  driver: string;
-  note?: string;
-}): Promise<any> {
+export async function payDebt(body: PayDebtRequest): Promise<PayDebtResponse> {
   return request("POST", "/api/debts/pay", body);
 }
