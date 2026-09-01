@@ -8,8 +8,8 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { User } from "./types";
-import { apiLogin, apiFetchMe, apiLogout } from "./api";
+import type { User } from "../types";
+import { apiLogin, apiFetchMe, apiLogout } from "../api";
 
 interface AuthContextType {
   user: User | null;

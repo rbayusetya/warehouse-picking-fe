@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import SignaturePad from "./SignaturePad";
+import SignaturePad from "@/components/SignaturePad";
 import { X } from "lucide-react";
 
-interface ConfirmShortageModalProps {
+interface ConfirmMatchModalProps {
   itemName: string;
-  debtNote: string;
-  settlements: { qty: number; date: string; driver: string; note: string; by: string }[];
   onConfirm: (signatureDealer: string, signatureDriver: string) => void;
   onClose: () => void;
 }
 
-export default function ConfirmShortageModal({ itemName, debtNote, settlements, onConfirm, onClose }: ConfirmShortageModalProps) {
+export default function ConfirmMatchModal({ itemName, onConfirm, onClose }: ConfirmMatchModalProps) {
   const [sigDealer, setSigDealer] = useState("");
   const [sigDriver, setSigDriver] = useState("");
   const [error, setError] = useState("");
@@ -30,31 +28,14 @@ export default function ConfirmShortageModal({ itemName, debtNote, settlements, 
     <div className="fixed inset-0 z-30 grid place-items-center bg-black/45 p-5">
       <div className="max-h-[90vh] w-full max-w-[620px] overflow-auto rounded-lg bg-[var(--surface)] p-[18px] shadow-lg">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="m-0 text-lg font-bold">Konfirmasi Hutang Barang</h3>
+          <h3 className="m-0 text-lg font-bold">Konfirmasi Barang Sesuai</h3>
           <button type="button" onClick={onClose} className="rounded-md p-1 hover:bg-gray-100">
             <X size={20} />
           </button>
         </div>
         <p className="mb-4 text-sm text-[var(--muted)]">
-          Barang <strong>{itemName}</strong> diterima dengan kekurangan (hutang).
+          Barang <strong>{itemName}</strong> telah diterima sesuai. Silakan tanda tangan untuk konfirmasi.
         </p>
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="mb-2 text-sm font-bold text-amber-800">Dokumen Hutang:</p>
-          {debtNote && <p className="mb-2 text-sm text-amber-700">Note admin: {debtNote}</p>}
-          {settlements.length > 0 ? (
-            <div>
-              <p className="text-xs font-bold text-amber-800">Riwayat pembayaran:</p>
-              {settlements.map((s, i) => (
-                <p key={i} className="text-xs text-amber-700">
-                  {s.date} - {s.qty} qty dibawa {s.driver} ({s.by})
-                  {s.note ? `: ${s.note}` : ""}
-                </p>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-amber-600">Belum ada pembayaran.</p>
-          )}
-        </div>
         {error && (
           <div className="mb-3 rounded-lg border border-[#fecdca] bg-[#fff1f0] px-4 py-3 text-sm text-[#7a271a]">{error}</div>
         )}
@@ -67,8 +48,8 @@ export default function ConfirmShortageModal({ itemName, debtNote, settlements, 
             <label className="mb-1 block text-[13px] font-bold text-[var(--text-secondary)]">Tanda Tangan Driver</label>
             <SignaturePad onSign={setSigDriver} />
           </div>
-          <button type="submit" className="rounded-md bg-amber-600 px-[13px] py-[9px] font-bold text-white hover:bg-amber-700">
-            Konfirmasi Hutang
+          <button type="submit" className="rounded-md bg-green-600 px-[13px] py-[9px] font-bold text-white hover:bg-green-700">
+            Konfirmasi Sesuai
           </button>
         </form>
       </div>

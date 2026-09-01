@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/providers/auth-context";
 import { uploadExcel } from "@/lib/api";
 import { Upload, RefreshCw, Loader, ArrowLeft } from "lucide-react";
 import Link from "next/link";

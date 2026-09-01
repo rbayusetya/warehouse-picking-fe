@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/providers/auth-context";
 import { fetchDealerItems } from "@/lib/api";
 import type { DealerItemEntry } from "@/lib/api";
 import Link from "next/link";

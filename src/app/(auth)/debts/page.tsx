@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/providers/auth-context";
 import { fetchDebts } from "@/lib/api";
-import DebtTable from "@/components/DebtTable";
+import DebtTable from "./_components/DebtTable";
 import FilterBar from "@/components/FilterBar";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { PickingList } from "@/lib/types";
-import SignaturePad from "./SignaturePad";
+import SignaturePad from "@/components/SignaturePad";
 
 interface HandoverPanelProps {
   list: PickingList;

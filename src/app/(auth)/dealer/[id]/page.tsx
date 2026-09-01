@@ -2,14 +2,14 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/providers/auth-context";
 import { fetchDealerItems, confirmDealerItem } from "@/lib/api";
 import type { DealerItemEntry } from "@/lib/api";
 import type { DealerConfirmAction } from "@/lib/types";
-import DealerItemRow from "@/components/DealerItemRow";
-import ConfirmMatchModal from "@/components/ConfirmMatchModal";
-import ConfirmShortageModal from "@/components/ConfirmShortageModal";
-import ConfirmExcessModal from "@/components/ConfirmExcessModal";
+import DealerItemRow from "../_components/DealerItemRow";
+import ConfirmMatchModal from "../_components/ConfirmMatchModal";
+import ConfirmShortageModal from "../_components/ConfirmShortageModal";
+import ConfirmExcessModal from "../_components/ConfirmExcessModal";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 

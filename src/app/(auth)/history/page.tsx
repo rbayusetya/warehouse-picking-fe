@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/providers/auth-context";
 import { fetchPickingLists } from "@/lib/api";
 import Timeline from "@/components/Timeline";
 import Link from "next/link";

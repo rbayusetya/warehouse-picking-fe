@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/providers/auth-context";
 import { fetchPickingListDetail, updatePickingItems, completePicking } from "@/lib/api";
 import { statusLabel } from "@/lib/utils";
 import type { PickingList } from "@/lib/types";
-import PickingTable from "@/components/PickingTable";
+import PickingTable from "../_components/PickingTable";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 

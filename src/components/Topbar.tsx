@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@/lib/auth-context";
-import { useDarkMode } from "@/lib/dark-mode";
+import { useAuth } from "@/lib/providers/auth-context";
+import { useDarkMode } from "@/lib/providers/dark-mode";
 import { useRouter } from "next/navigation";
 import { LogOut, Warehouse, Menu, X, Sun, Moon } from "lucide-react";
 

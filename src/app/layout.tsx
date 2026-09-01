@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/lib/auth-context";
-import { DarkModeProvider } from "@/lib/dark-mode";
+import { AuthProvider } from "@/lib/providers/auth-context";
+import { DarkModeProvider } from "@/lib/providers/dark-mode";
 
 export const metadata: Metadata = {
   title: "Picking Control Gudang",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import SignaturePad from "./SignaturePad";
+import SignaturePad from "@/components/SignaturePad";
 import { X } from "lucide-react";
 
 interface ConfirmExcessModalProps {
