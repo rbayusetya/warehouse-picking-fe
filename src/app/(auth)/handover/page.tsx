@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/providers/auth-context";
 import { fetchPickingLists, fetchSettlementHandovers } from "@/lib/api";
+import type { PickingList } from "@/lib/types";
+import type { SettlementHandoverEntry } from "@/lib/api";
 import Link from "next/link";
 import { statusLabel, listTotals } from "@/lib/utils";
 import FilterBar from "@/components/FilterBar";
@@ -10,8 +12,8 @@ import { ArrowLeft, Handshake, DollarSign } from "lucide-react";
 
 export default function HandoverListPage() {
   const { user } = useAuth();
-  const [lists, setLists] = useState<any[]>([]);
-  const [settlementHandovers, setSettlementHandovers] = useState<any[]>([]);
+  const [lists, setLists] = useState<PickingList[]>([]);
+  const [settlementHandovers, setSettlementHandovers] = useState<SettlementHandoverEntry[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,7 +23,7 @@ export default function HandoverListPage() {
     ])
       .then(([l, sh]) => {
         setLists(l);
-        setSettlementHandovers(sh.rows ?? []);
+        setSettlementHandovers(sh);
       })
       .catch((e) => setError(e.message));
   }, []);
@@ -34,19 +36,19 @@ export default function HandoverListPage() {
 
   const allDates = useMemo(() => {
     const pl = lists.map((l) => l.date);
-    const sh = settlementHandovers.map((h) => h.picking_list.date);
+    const sh = settlementHandovers.map((h) => h.pickingList.date);
     return [...new Set([...pl, ...sh])].sort();
   }, [lists, settlementHandovers]);
 
   const allDrivers = useMemo(() => {
     const pl = lists.map((l) => l.driver);
-    const sh = settlementHandovers.map((h) => h.picking_list.driver);
+    const sh = settlementHandovers.map((h) => h.pickingList.driver);
     return [...new Set([...pl, ...sh])].sort();
   }, [lists, settlementHandovers]);
 
   const allExpeditions = useMemo(() => {
     const pl = lists.map((l) => l.expedition);
-    const sh = settlementHandovers.map((h) => h.picking_list.expedition);
+    const sh = settlementHandovers.map((h) => h.pickingList.expedition);
     return [...new Set([...pl, ...sh])].sort();
   }, [lists, settlementHandovers]);
 
@@ -61,9 +63,9 @@ export default function HandoverListPage() {
 
   const filteredSettlementHandovers = useMemo(() => {
     return settlementHandovers.filter((h) => {
-      if (filters.date && h.picking_list.date !== filters.date) return false;
-      if (filters.driver && h.picking_list.driver !== filters.driver) return false;
-      if (filters.expedition && h.picking_list.expedition !== filters.expedition) return false;
+      if (filters.date && h.pickingList.date !== filters.date) return false;
+      if (filters.driver && h.pickingList.driver !== filters.driver) return false;
+      if (filters.expedition && h.pickingList.expedition !== filters.expedition) return false;
       return true;
     });
   }, [settlementHandovers, filters]);
@@ -175,12 +177,12 @@ export default function HandoverListPage() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="m-0 mb-1 truncate text-[15px] font-bold text-[var(--text-primary)]">
-                    {h.picking_list.picking_id || h.picking_list.id}
+                    {h.pickingList.pickingId || h.pickingList.id}
                   </h3>
                   <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-[var(--muted)]">
-                    <span>{h.picking_list.date}</span>
-                    <span>{h.picking_list.driver}</span>
-                    <span>{h.picking_list.expedition}</span>
+                    <span>{h.pickingList.date}</span>
+                    <span>{h.pickingList.driver}</span>
+                    <span>{h.pickingList.expedition}</span>
                   </div>
                 </div>
               </div>
@@ -188,13 +190,13 @@ export default function HandoverListPage() {
                 <div className="flex flex-wrap gap-2 text-[12px] text-[var(--text-secondary)]">
                   <span className="font-bold">{h.item.name}</span>
                   <span className="text-[var(--muted)]">Qty: {h.item.qty}</span>
-                  <span className="text-[var(--muted)]">Admin: {h.admin_name}</span>
-                  <span className="text-[var(--muted)]">Driver: {h.driver_name}</span>
+                  <span className="text-[var(--muted)]">Admin: {h.adminName}</span>
+                  <span className="text-[var(--muted)]">Driver: {h.driverName}</span>
                 </div>
               </div>
-              {h.created_at && (
+              {h.createdAt && (
                 <div className="mt-1.5 text-[11px] text-[var(--muted)]">
-                  {h.created_at}
+                  {h.createdAt}
                 </div>
               )}
             </div>
