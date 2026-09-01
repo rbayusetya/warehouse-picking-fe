@@ -7,7 +7,6 @@ import type {
   Settlement,
   DealerInfo,
   DealerReturn,
-  DealerConfirmAction,
 } from "../types";
 import type {
   RawUserResponse,
@@ -23,31 +22,16 @@ import type {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
-// ---- Token / Cookie helpers ----
-
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("auth_token");
-}
-
-export function setAuthCookie(token: string): void {
-  document.cookie = `auth_token=${token};path=/;max-age=86400;samesite=lax`;
-}
-
-export function clearAuthCookie(): void {
-  document.cookie = "auth_token=;path=/;max-age=0";
-}
-
 // ---- HTTP request helper ----
+// Auth is handled via httpOnly cookie set by the backend.
+// The browser automatically sends the cookie with credentials: 'include'.
 
 export async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     method,
-    headers,
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {

@@ -1,4 +1,4 @@
-import { request, getToken, mapPickingList } from "./request";
+import { request, mapPickingList } from "./request";
 import type {
   RawPickingListsResponse,
   RawPickingListDetail,
@@ -71,13 +71,10 @@ export async function completePicking(
 }
 
 export async function uploadExcel(file: File): Promise<RawUploadResponse> {
-  const headers: Record<string, string> = {};
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
   const formData = new FormData();
   formData.append("file", file);
   const url = `${API_BASE}/api/picking/upload`;
-  const res = await fetch(url, { method: "POST", headers, body: formData });
+  const res = await fetch(url, { method: "POST", credentials: "include", body: formData });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || `Upload failed: ${res.status}`);

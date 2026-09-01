@@ -25,17 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+    // With httpOnly cookies, the browser sends the cookie automatically.
+    // Just call /api/auth/me — if cookie exists, backend returns user; otherwise null.
     apiFetchMe()
       .then((u) => setUser(u))
-      .catch(() => {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_user");
-      })
       .finally(() => setIsLoading(false));
   }, []);
 
