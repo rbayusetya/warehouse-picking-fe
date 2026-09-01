@@ -4,7 +4,7 @@
 
 - [x] **Fix auth inconsistency** — Sidebar reads `mock-data` for unconfirmed count; replace with real API call → Done: `useUnconfirmedDealerCount` hook
 - [ ] **Fix middleware auth vs SPA auth mismatch** — Cookie-only middleware + localStorage SPA auth causes redirect loops. Unify to httpOnly cookie only
-- [ ] **Fix `any` types in `api.ts`** — Replace `any` mapper parameters with `unknown` + validation, or define response types
+- [x] **Fix `any` types in API** — Replace `any` mapper parameters with proper response types → Done: `response-types.ts` + typed mappers, zero `any` in `lib/api/`
 - [ ] **Add error boundaries** — Add `error.tsx` per route segment so runtime errors don't crash the whole page
 
 ## Medium Priority
@@ -32,3 +32,5 @@
 - ✅ Mock data removed from Sidebar, replaced with real API hook
 - ✅ API split by domain — 6 focused files under `lib/api/`
 - ✅ Backend API documentation (`API_DOCUMENTATION.md`) — all 16 endpoints documented
+- ✅ API type safety — `response-types.ts` with 15 raw response types, zero `any` in `lib/api/`
+- ✅ Handover page fixed — snake_case properties updated to camelCase
