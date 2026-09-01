@@ -9,12 +9,17 @@ This is a **Next.js App Router** project. Instead of the traditional `components
 - Parenthesized folders like `(auth)` are **route groups** (no URL segment)
 - Bracketed folders like `[id]` are **dynamic URL parameters**
 
+**Auth is httpOnly cookie-based** — the backend sets the cookie on login, the frontend never touches the token.
+
 ---
 
 ## Full File Tree
 
 ```
 src/
+├── proxy.ts                          # Route protection (Next.js 16 convention)
+│                                     #   Reads auth_token cookie, redirects to /login if missing
+│
 ├── app/                              # ← All routes live here (App Router)
 │   ├── layout.tsx                    # Root layout — wraps EVERY page
 │   ├── page.tsx                      # Route: / → redirects to /login
@@ -72,7 +77,8 @@ src/
 │           └── page.tsx
 │
 ├── components/                       # Shared UI components (used across multiple routes)
-│   ├── Sidebar.tsx                   # Desktop sidebar nav
+│   ├── NavLinks.tsx                  # Shared nav links (desktop sidebar + mobile drawer)
+│   ├── Sidebar.tsx                   # Desktop sidebar wrapper
 │   ├── Topbar.tsx                    # Top navigation bar
 │   ├── FilterBar.tsx                 # Date/driver/expedition filter dropdowns
 │   ├── StatCard.tsx                  # Dashboard stat card
@@ -81,10 +87,21 @@ src/
 │   └── CameraCapture.tsx             # Camera/photo capture
 │
 └── lib/                              # Utilities, types, API, context providers
-    ├── types.ts                      # TypeScript type definitions
-    ├── api.ts                        # API client (fetch wrapper + mappers)
+    ├── types.ts                      # TypeScript type definitions (camelCase frontend types)
     ├── utils.ts                      # Helper functions (date formatting, debt calc, etc.)
     ├── mock-data.ts                  # Hardcoded mock data (legacy, kept for reference)
+    ├── use-unconfirmed-dealer-count.ts  # Hook: fetches unconfirmed dealer items from API
+    │
+    ├── api/                          # API client — split by domain
+    │   ├── index.ts                  #   Barrel re-export (keeps @/lib/api imports working)
+    │   ├── request.ts                #   Shared: HTTP helper, data mappers
+    │   ├── response-types.ts         #   Raw backend response types (snake_case)
+    │   ├── auth.ts                   #   Login, fetchMe, logout
+    │   ├── picking.ts                #   Picking lists, items, upload, handover
+    │   ├── debts.ts                  #   Debt listing, payment
+    │   ├── dealer.ts                 #   Dealer items, confirmation
+    │   └── settlement-handovers.ts   #   Settlement handover listing, creation
+    │
     └── providers/                    # React Context providers
         ├── auth-context.tsx           #   Auth state (login, logout, current user)
         └── dark-mode.tsx              #   Dark mode toggle
@@ -145,6 +162,26 @@ app/
 
 The `[id]` folder means "this part of the URL is a variable." Inside `page.tsx`, you access it via `params.id`. In this project it's used for viewing individual picking lists, handovers, and dealer items.
 
+### `_components/` — Private Component Folder
+
+```
+app/
+  picking/
+    _components/        ← NOT a route (underscore = private)
+      PickingTable.tsx  ← only used by picking pages
+```
+
+The underscore prefix tells Next.js "don't try to make this a route." It's where feature-specific components live, co-located with their pages.
+
+### `proxy.ts` — Route Protection (was `middleware.ts`)
+
+Located at `src/proxy.ts` (Next.js 16 convention). Runs before every request:
+
+1. Checks if the route is public (`/login`)
+2. Reads `auth_token` httpOnly cookie
+3. If no cookie → redirect to `/login?redirect=<original_path>`
+4. If cookie exists → continue
+
 ### `layout.tsx` — Layout Files
 
 Layouts wrap their sibling/child routes and **persist across navigation**. When you navigate from `/picking` to `/picking/123`, the layout stays mounted — only the `page.tsx` content swaps.
@@ -189,7 +226,7 @@ RootLayout
 
 Most components start with `"use client"`. This is because Next.js App Router defaults to **Server Components** (run on the server, send HTML). Since this app uses:
 - React hooks (`useState`, `useEffect`, `useContext`)
-- Browser APIs (`localStorage`, `window`)
+- Browser APIs (`window`)
 - Event handlers (`onClick`)
 
 ...all components need the `"use client"` opt-in to run in the browser.
@@ -201,9 +238,11 @@ Most components start with `"use client"`. This is because Next.js App Router de
 | Used by one feature (picking, dealer, etc.) | Co-locate: `app/(auth)/foo/_components/MyComponent.tsx` |
 | Used across multiple features | `src/components/MyComponent.tsx` |
 | Utility/helper function | `src/lib/utils.ts` |
-| API calls | `src/lib/api.ts` |
+| API calls | `src/lib/api/<domain>.ts` |
 | Shared types | `src/lib/types.ts` |
+| Raw backend types | `src/lib/api/response-types.ts` |
 | React Context provider | `src/lib/providers/*-context.tsx` |
+| Custom hook | `src/lib/use-<name>.ts` |
 
 ---
 
@@ -211,10 +250,13 @@ Most components start with `"use client"`. This is because Next.js App Router de
 
 ```
 1. User visits /dashboard
-2. middleware.ts checks for auth_token cookie → not found → redirect to /login
-3. User logs in → apiLogin() stores token in localStorage + sets cookie
-4. AuthProvider (lib/providers/auth-context.tsx) picks up token → calls apiFetchMe() → sets user state
-5. (auth)/layout.tsx renders Topbar + Sidebar + children
+2. proxy.ts checks for auth_token cookie → not found → redirect to /login
+3. User submits login form → POST /api/auth/login
+4. Backend authenticates → sets httpOnly cookie via Set-Cookie header → returns user JSON
+5. AuthProvider (lib/providers/auth-context.tsx) stores user in state
+6. (auth)/layout.tsx renders Topbar + Sidebar + children
+7. All subsequent fetch calls include credentials: 'include' → browser sends cookie automatically
+8. Logout → POST /api/auth/logout → backend clears cookie → frontend clears user state
 ```
 
 ---
@@ -236,3 +278,30 @@ Most components start with `"use client"`. This is because Next.js App Router de
 | `/debts` | `app/(auth)/debts/page.tsx` | Root + Auth |
 | `/debts/pay` | `app/(auth)/debts/pay/page.tsx` | Root + Auth |
 | `/history` | `app/(auth)/history/page.tsx` | Root + Auth |
+
+---
+
+## API Client Structure
+
+All API calls live in `src/lib/api/`:
+
+```
+lib/api/
+  index.ts              ← barrel re-export (keeps @/lib/api imports working)
+  request.ts            ← shared HTTP helper + data mappers
+  response-types.ts     ← raw backend response types (snake_case)
+  auth.ts               ← login, fetchMe, logout
+  picking.ts            ← picking lists, items, upload, handover
+  debts.ts              ← debt listing, payment
+  dealer.ts             ← dealer items, confirmation
+  settlement-handovers.ts ← settlement handover listing, creation
+```
+
+**Import convention:**
+```tsx
+// Recommended — imports from specific domain
+import { fetchPickingLists } from "@/lib/api/picking";
+
+// Also works — imports from barrel
+import { fetchPickingLists } from "@/lib/api";
+```

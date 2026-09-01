@@ -1,9 +1,31 @@
 # Backend API Documentation
 
 > All endpoints are relative to `NEXT_PUBLIC_API_URL`.
-> All requests (except login) require `Authorization: Bearer <token>` header.
+> **Auth is via httpOnly cookie** — the backend sets `Set-Cookie` on login, the browser sends it automatically.
+> Frontend sends `credentials: 'include'` on all fetch calls. No `Authorization` header is used.
 > All request/response bodies are JSON unless stated otherwise.
 > Error responses follow `{ "detail": "error message" }` shape with appropriate HTTP status.
+
+---
+
+## Backend Requirements
+
+The backend **must** implement these cookie behaviors:
+
+### `POST /api/auth/login`
+On success, set cookie:
+```
+Set-Cookie: auth_token=<JWT>; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400
+```
+
+### `POST /api/auth/logout`
+Clear the cookie:
+```
+Set-Cookie: auth_token=; Path=/; Max-Age=0
+```
+
+### All other endpoints
+Read `auth_token` from the cookie. Return 401 if invalid/missing.
 
 ---
 
@@ -11,9 +33,9 @@
 
 ### `POST /api/auth/login`
 
-**Used by:** Login page (`src/app/login/login-form.tsx`)
+**Used by:** `src/lib/api/auth.ts` → Login form
 
-Authenticate a user and return a JWT token.
+Authenticate a user. Backend sets httpOnly cookie on success.
 
 **Request:**
 ```json
@@ -26,7 +48,6 @@ Authenticate a user and return a JWT token.
 **Response (200):**
 ```json
 {
-  "access_token": "string (JWT)",
   "username": "string",
   "name": "string",
   "role": "admin | kepala | ekspedisi | dealer",
@@ -36,18 +57,20 @@ Authenticate a user and return a JWT token.
 }
 ```
 
+**Backend must also:** Set `Set-Cookie` header with httpOnly JWT cookie.
+
 **Notes:**
 - `dealer_code` is only present when `role = "dealer"`
 - `expedition` is only present when `role = "ekspedisi"`
-- Frontend stores `access_token` in both `localStorage` and an `auth_token` cookie
+- Frontend does NOT store the token — cookie is managed entirely by the backend
 
 ---
 
 ### `GET /api/auth/me`
 
-**Used by:** Auth context on app load (`src/lib/providers/auth-context.tsx`)
+**Used by:** `src/lib/providers/auth-context.tsx` on app load
 
-Get the currently authenticated user's profile.
+Get the currently authenticated user. Reads JWT from cookie.
 
 **Response (200):**
 ```json
@@ -61,7 +84,21 @@ Get the currently authenticated user's profile.
 }
 ```
 
-**Response (401):** Returns error, frontend clears auth state.
+**Response (401):** Frontend clears user state, redirects to login.
+
+---
+
+### `POST /api/auth/logout`
+
+**Used by:** `src/lib/api/auth.ts` → Logout
+
+Clear the auth cookie.
+
+**Request:** Empty body `{}`
+
+**Response (200):** `{ "status": "ok" }`
+
+**Backend must also:** Clear `auth_token` cookie via `Set-Cookie` header.
 
 ---
 
@@ -69,7 +106,7 @@ Get the currently authenticated user's profile.
 
 ### `GET /api/picking/dashboard`
 
-**Used by:** Dashboard page (defined in api.ts but dashboard currently calls `fetchPickingLists` instead)
+**Used by:** `src/lib/api/picking.ts` → `fetchDashboardStats()`
 
 Get aggregated dashboard statistics.
 
@@ -89,7 +126,8 @@ Get aggregated dashboard statistics.
 
 ### `GET /api/picking/`
 
-**Used by:** Dashboard, Picking list, Handover list, History pages
+**Used by:** `src/lib/api/picking.ts` → `fetchPickingLists()`
+**Pages:** Dashboard, Picking list, Handover list, History
 
 List all picking lists (summary — no items).
 
@@ -110,16 +148,16 @@ List all picking lists (summary — no items).
 ```
 
 **Notes:**
-- If called by an `ekspedisi` user, backend should filter by their `expedition`
-- If called by a `dealer` user, backend should filter by their `dealer_code`
+- Backend should filter by role: `ekspedisi` → their expedition, `dealer` → their dealer_code
 
 ---
 
 ### `GET /api/picking/{id}`
 
-**Used by:** Picking detail page, Handover detail page
+**Used by:** `src/lib/api/picking.ts` → `fetchPickingListDetail(id)`
+**Pages:** Picking detail, Handover detail
 
-Get a single picking list with full detail (all items, settlements, dealer info, handover, history).
+Get a single picking list with full detail.
 
 **Response (200):**
 ```json
@@ -190,15 +228,19 @@ Get a single picking list with full detail (all items, settlements, dealer info,
 }
 ```
 
+**Frontend type:** `RawPickingListDetail` in `src/lib/api/response-types.ts`
+**Mapped to:** `PickingList` in `src/lib/types.ts`
+
 ---
 
 ### `PUT /api/picking/{id}/items`
 
-**Used by:** Picking detail page (updating items)
+**Used by:** `src/lib/api/picking.ts` → `updatePickingItems(listId, items)`
+**Pages:** Picking detail
 
-Update one or more items in a picking list (mark as confirmed, set actual qty, add notes).
+Update one or more items in a picking list.
 
-**Request:**
+**Request:** (array, not object)
 ```json
 [
   {
@@ -210,9 +252,7 @@ Update one or more items in a picking list (mark as confirmed, set actual qty, a
 ]
 ```
 
-**Notes:**
-- The body is an **array**, not an object
-- All fields except `id` are optional (partial update)
+**Notes:** All fields except `id` are optional (partial update).
 
 **Response (200):** Returns the full updated `PickingList` (same shape as `GET /api/picking/{id}`)
 
@@ -220,9 +260,10 @@ Update one or more items in a picking list (mark as confirmed, set actual qty, a
 
 ### `POST /api/picking/{id}/complete`
 
-**Used by:** Picking detail page (marking picking as done)
+**Used by:** `src/lib/api/picking.ts` → `completePicking(listId)`
+**Pages:** Picking detail
 
-Complete a picking list, transitioning its status from `draft` → `picked`.
+Complete a picking list (`draft` → `picked`).
 
 **Request:** Empty body `{}`
 
@@ -234,18 +275,18 @@ Complete a picking list, transitioning its status from `draft` → `picked`.
 }
 ```
 
-**Notes:**
-- `debt` is the total shortage (planned - actual - paid) across all items
+**Frontend type:** `RawCompletePickingResponse`
 
 ---
 
 ### `POST /api/picking/upload`
 
-**Used by:** Upload page (`src/app/(auth)/upload/page.tsx`)
+**Used by:** `src/lib/api/picking.ts` → `uploadExcel(file)`
+**Pages:** Upload
 
 Upload an Excel file (.xlsx/.xls) to import picking lists.
 
-**Request:** `multipart/form-data` (NOT JSON)
+**Request:** `multipart/form-data`
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -260,15 +301,15 @@ Upload an Excel file (.xlsx/.xls) to import picking lists.
     {
       "id": "12626315209",
       "driver": "TATANG",
-      "items": [ ... ]
+      "items": [ "..." ]
     }
   ]
 }
 ```
 
-**Notes:**
-- This is the only endpoint that uses `multipart/form-data` instead of JSON
-- Auth token is still sent via `Authorization` header
+**Frontend type:** `RawUploadResponse`
+
+**Notes:** This is the only endpoint using `multipart/form-data`. Cookie is sent automatically via `credentials: 'include'`.
 
 ---
 
@@ -276,9 +317,10 @@ Upload an Excel file (.xlsx/.xls) to import picking lists.
 
 ### `POST /api/picking/{id}/handover`
 
-**Used by:** Handover detail page
+**Used by:** `src/lib/api/picking.ts` → `createHandover(listId, body)`
+**Pages:** Handover detail
 
-Create a handover record for a picking list (admin signs off to driver).
+Create a handover record (admin signs off to driver).
 
 **Request:**
 ```json
@@ -290,19 +332,7 @@ Create a handover record for a picking list (admin signs off to driver).
 }
 ```
 
-**Notes:**
-- `signature_admin` and `signature_driver` are base64-encoded PNG data URLs
-- Both are optional (`string | null`)
-
-**Response (200):** Returns the created handover object (shape varies — frontend treats it as `any`)
-
----
-
-### `GET /api/picking/{id}/handover`
-
-**Used by:** Handover detail page (fetching existing handover)
-
-Get the handover record for a picking list.
+**Notes:** Signatures are base64-encoded PNG data URLs. Both optional.
 
 **Response (200):**
 ```json
@@ -316,15 +346,29 @@ Get the handover record for a picking list.
 }
 ```
 
+**Frontend type:** `HandoverResponse` in `src/lib/api/picking.ts`
+
+---
+
+### `GET /api/picking/{id}/handover`
+
+**Used by:** `src/lib/api/picking.ts` → `fetchHandover(listId)`
+**Pages:** Handover detail
+
+Get the handover record for a picking list.
+
+**Response (200):** Same shape as `HandoverResponse` above, or `null` if no handover exists.
+
 ---
 
 ## Debts (Hutang Barang)
 
 ### `GET /api/debts/`
 
-**Used by:** Debts page (`src/app/(auth)/debts/page.tsx`)
+**Used by:** `src/lib/api/debts.ts` → `fetchDebts()`
+**Pages:** Debts page
 
-List all outstanding debts (items with shortages across all picking lists).
+List all outstanding debts.
 
 **Response (200):**
 ```json
@@ -353,15 +397,14 @@ List all outstanding debts (items with shortages across all picking lists).
 }
 ```
 
-**Notes:**
-- `paid` = total quantity returned/settled so far
-- `debt` = `planned_qty - actual_qty - paid` (minimum 0)
+**Frontend type:** `RawDebtsResponse` → mapped to `DebtRow[]`
 
 ---
 
 ### `POST /api/debts/pay`
 
-**Used by:** Debt pay page (`src/app/(auth)/debts/pay/page.tsx`)
+**Used by:** `src/lib/api/debts.ts` → `payDebt(body)`
+**Pages:** Debt pay page
 
 Record a debt payment (settlement of returned items).
 
@@ -376,7 +419,20 @@ Record a debt payment (settlement of returned items).
 }
 ```
 
-**Response (200):** Returns the created settlement record (shape varies — frontend treats it as `any`)
+**Response (200):**
+```json
+{
+  "id": "uuid",
+  "picking_item_id": "uuid",
+  "qty": 2,
+  "date": "2026-06-15",
+  "driver": "TATANG",
+  "note": "sudah dikembalikan",
+  "settlement": { "id": "uuid" }
+}
+```
+
+**Frontend type:** `PayDebtResponse` in `src/lib/api/debts.ts`
 
 ---
 
@@ -384,7 +440,8 @@ Record a debt payment (settlement of returned items).
 
 ### `GET /api/settlement-handovers/`
 
-**Used by:** Handover list page (`src/app/(auth)/handover/page.tsx`)
+**Used by:** `src/lib/api/settlement-handovers.ts` → `fetchSettlementHandovers()`
+**Pages:** Handover list
 
 List all settlement handovers (admin↔driver sign-offs for debt settlements).
 
@@ -419,11 +476,14 @@ List all settlement handovers (admin↔driver sign-offs for debt settlements).
 }
 ```
 
+**Frontend type:** `RawSettlementHandoversResponse` → mapped to `SettlementHandoverEntry[]`
+
 ---
 
 ### `POST /api/settlement-handovers/`
 
-**Used by:** Debt pay page (creating sign-off after payment)
+**Used by:** `src/lib/api/settlement-handovers.ts` → `createSettlementHandover(body)`
+**Pages:** Debt pay page
 
 Create a settlement handover record (admin signs off on a debt payment).
 
@@ -438,7 +498,7 @@ Create a settlement handover record (admin signs off on a debt payment).
 }
 ```
 
-**Response (200):** Returns the created handover object (shape varies — frontend treats it as `any`)
+**Response (200):** Returns `SettlementHandoverEntry` (same shape as items in GET response).
 
 ---
 
@@ -446,9 +506,10 @@ Create a settlement handover record (admin signs off on a debt payment).
 
 ### `GET /api/dealer/items`
 
-**Used by:** Dealer page, Sidebar (unconfirmed count)
+**Used by:** `src/lib/api/dealer.ts` → `fetchDealerItems()`
+**Pages:** Dealer page, Sidebar (unconfirmed count)
 
-List all items assigned to the current dealer across all picking lists.
+List all items assigned to the current dealer.
 
 **Response (200):**
 ```json
@@ -486,15 +547,18 @@ List all items assigned to the current dealer across all picking lists.
 }
 ```
 
+**Frontend type:** `RawDealerItemsResponse` → mapped to `DealerItemEntry[]`
+
 **Notes:**
-- Backend should filter by the authenticated user's `dealer_code`
-- `confirmation_status` is `null` or `"pending"` when the dealer hasn't confirmed yet
+- Backend filters by the authenticated user's `dealer_code`
+- `confirmation_status` is `null` or `"pending"` when unconfirmed
 
 ---
 
 ### `GET /api/dealer/items/{picking_list_id}`
 
-**Used by:** Dealer detail page
+**Used by:** `src/lib/api/dealer.ts` → `fetchDealerItems(pickingListId)`
+**Pages:** Dealer detail
 
 List dealer items for a specific picking list.
 
@@ -504,7 +568,8 @@ List dealer items for a specific picking list.
 
 ### `POST /api/dealer/confirm`
 
-**Used by:** Dealer detail page (confirming item receipt)
+**Used by:** `src/lib/api/dealer.ts` → `confirmDealerItem(body)`
+**Pages:** Dealer detail
 
 Dealer confirms whether received items match, are short, or are in excess.
 
@@ -525,40 +590,59 @@ Dealer confirms whether received items match, are short, or are in excess.
 
 **Notes:**
 - `signature_dealer` and `signature_driver` are optional base64 data URLs
-- `return_info` is only present when `status = "shortage"` or `status = "excess"` (items being returned)
+- `return_info` only present when `status = "shortage"` or `"excess"`
 
-**Response (200):** Returns the confirmation record (shape varies — frontend treats it as `any`)
+**Response (200):**
+```json
+{
+  "id": "uuid",
+  "picking_item_id": "uuid",
+  "dealer_code": "LECF",
+  "status": "match"
+}
+```
+
+**Frontend type:** `ConfirmDealerItemResponse` in `src/lib/api/dealer.ts`
 
 ---
 
-## Summary: Endpoint Count by Domain
+## Frontend Source Map
+
+All API calls live in `src/lib/api/`:
+
+| File | Domain | Functions |
+|------|--------|-----------|
+| `request.ts` | Shared | `request()`, mappers (`mapUser`, `mapPickingList`, etc.) |
+| `response-types.ts` | Shared | Raw backend response types (snake_case) |
+| `auth.ts` | Auth | `apiLogin()`, `apiFetchMe()`, `apiLogout()` |
+| `picking.ts` | Picking | `fetchPickingLists()`, `fetchPickingListDetail()`, `updatePickingItems()`, `completePicking()`, `uploadExcel()`, `createHandover()`, `fetchHandover()` |
+| `debts.ts` | Debts | `fetchDebts()`, `payDebt()` |
+| `settlement-handovers.ts` | Settlements | `fetchSettlementHandovers()`, `createSettlementHandover()` |
+| `dealer.ts` | Dealer | `fetchDealerItems()`, `confirmDealerItem()` |
+| `index.ts` | Barrel | Re-exports all of the above |
+
+---
+
+## Summary
 
 | Domain | Endpoints | Methods |
 |--------|-----------|---------|
-| Auth | 2 | `POST login`, `GET me` |
+| Auth | 3 | `POST login`, `GET me`, `POST logout` |
 | Picking | 5 | `GET list`, `GET detail`, `PUT items`, `POST complete`, `POST upload` |
 | Handover | 2 | `POST create`, `GET fetch` |
 | Debts | 2 | `GET list`, `POST pay` |
 | Settlement Handovers | 2 | `GET list`, `POST create` |
 | Dealer | 3 | `GET items`, `GET items/{id}`, `POST confirm` |
-| **Total** | **16** | |
+| **Total** | **17** | |
 
 ---
 
-## Key Observations for Backend Refactor
+## Key Notes for Backend Refactor
 
-1. **Auth is simple JWT** — just `login` + `me`. No refresh tokens, no OAuth. Easy to replicate in any framework.
-
-2. **Signatures are base64 data URLs** — stored as strings in the DB. No file upload/storage service needed.
-
-3. **Only one multipart endpoint** — `POST /api/picking/upload` for Excel import. Everything else is JSON.
-
-4. **Role-based filtering happens server-side** — `ekspedisi` sees only their expedition's picking lists, `dealer` sees only their items. The backend enforces this, not the frontend.
-
-5. **Error shape is `{ "detail": "message" }`** — this is FastAPI/Pydantic convention. If migrating, keep this contract for frontend compatibility.
-
-6. **Some responses are loosely typed** — `confirmDealerItem`, `createHandover`, `payDebt`, `createSettlementHandover` all return `any` from the frontend. You have flexibility in shaping these.
-
-7. **No WebSocket/SSE** — purely request/response. No real-time updates.
-
-8. **16 total endpoints** — this is a small API surface. Straightforward to replicate in Quarkus, Go, Node, or any framework.
+1. **Auth is httpOnly cookie** — Backend sets `Set-Cookie` on login/logout. Frontend never touches the token.
+2. **Signatures are base64 data URLs** — Stored as strings in the DB. No file upload needed.
+3. **One multipart endpoint** — `POST /api/picking/upload` for Excel import. Everything else is JSON.
+4. **Role-based filtering is server-side** — `ekspedisi` sees only their expedition, `dealer` sees only their items.
+5. **Error shape:** `{ "detail": "message" }` — keep this for frontend compatibility.
+6. **No WebSocket/SSE** — Purely request/response.
+7. **17 total endpoints** — Small API surface, straightforward to replicate in Quarkus, Go, Node, etc.
