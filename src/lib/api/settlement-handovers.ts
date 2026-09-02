@@ -70,7 +70,7 @@ function mapSettlementHandover(raw: RawSettlementHandover): SettlementHandoverEn
 
 export async function fetchSettlementHandovers(): Promise<SettlementHandoverEntry[]> {
   const data = await request<RawSettlementHandoversResponse>("GET", "/api/settlement-handovers/");
-  return (data.handovers ?? []).map(mapSettlementHandover);
+  return (data.rows ?? []).map(mapSettlementHandover);
 }
 
 export async function createSettlementHandover(

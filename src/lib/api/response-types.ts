@@ -209,5 +209,5 @@ export interface RawSettlementHandover {
 }
 
 export interface RawSettlementHandoversResponse {
-  handovers: RawSettlementHandover[];
+  rows: RawSettlementHandover[];
 }

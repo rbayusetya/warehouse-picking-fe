@@ -22,15 +22,45 @@ import type {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
+// ---- Token management ----
+// The backend returns the JWT in the JSON body (not Set-Cookie).
+// We store it in localStorage for the SPA and also set a regular cookie
+// so the proxy (middleware) can read it for route protection.
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+}
+
+export function setToken(token: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("auth_token", token);
+  // Set a cookie so the proxy can read it. Not httpOnly — that requires
+  // the backend to set it via Set-Cookie header, which it doesn't do yet.
+  document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+}
+
+export function clearToken(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("auth_token");
+  document.cookie = "auth_token=; path=/; max-age=0";
+}
+
 // ---- HTTP request helper ----
-// Auth is handled via httpOnly cookie set by the backend.
-// The browser automatically sends the cookie with credentials: 'include'.
+// Sends the JWT as a Bearer token in the Authorization header.
+// The proxy also checks for the auth_token cookie for route protection.
 
 export async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });

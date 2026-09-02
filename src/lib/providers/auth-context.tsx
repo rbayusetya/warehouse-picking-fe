@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { User } from "../types";
 import { apiLogin, apiFetchMe, apiLogout } from "../api";
+import { getToken } from "../api/request";
 
 interface AuthContextType {
   user: User | null;
@@ -25,11 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // With httpOnly cookies, the browser sends the cookie automatically.
-    // Just call /api/auth/me — if cookie exists, backend returns user; otherwise null.
-    apiFetchMe()
-      .then((u) => setUser(u))
-      .finally(() => setIsLoading(false));
+    // If there's a token in localStorage, try to fetch the current user.
+    // If the token is expired/invalid, apiFetchMe will clear it and return null.
+    if (getToken()) {
+      apiFetchMe()
+        .then((u) => setUser(u))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
