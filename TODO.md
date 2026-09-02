@@ -14,7 +14,7 @@
 - [x] **Split API by domain** — Monolithic `api.ts` split into `lib/api/{auth,picking,debts,settlement-handovers,dealer}.ts` with barrel `index.ts`
 - [ ] **Add data fetching abstraction** — Replace manual `useEffect` + `useState` patterns with React Query or SWR for caching, deduplication, and loading/error states
 - [ ] **Add loading/skeleton states** — Pages currently render `null` while fetching; add skeleton placeholders
-- [x] **Improve auth security** — Remove localStorage token, use httpOnly cookie only, add token refresh mechanism → Done: localStorage removed, all fetch uses credentials: include
+- [x] **Improve auth security** — Remove localStorage token, use httpOnly cookie only, add token refresh mechanism → Done: localStorage removed, all fetch uses credentials: include, reverted to still use localStorage and bearerToken
 
 ## Low Priority
 
