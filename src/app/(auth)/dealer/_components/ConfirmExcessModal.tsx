@@ -50,7 +50,7 @@ export default function ConfirmExcessModal({ itemName, dealerQty, onConfirm, onC
           <div className="mb-3 rounded-lg border border-[#fecdca] bg-[#fff1f0] px-4 py-3 text-sm text-[#7a271a]">{error}</div>
         )}
         <form onSubmit={handleSubmit} className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-[7px]">
               <label className="text-[13px] font-bold text-[var(--text-secondary)]">Driver pembawa kembali</label>
               <input

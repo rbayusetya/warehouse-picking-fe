@@ -54,7 +54,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
         </aside>
       </div>
 
-      <div className="grid grid-cols-[260px_1fr] gap-5 px-6 pb-8 pt-5 max-lg:grid-cols-1">
+      <div className="grid grid-cols-[260px_1fr] gap-5 px-4 pb-8 pt-5 sm:px-6 max-lg:grid-cols-1">
         <div className="max-lg:hidden">
           <Sidebar />
         </div>

@@ -20,7 +20,7 @@ export default function HandoverPanel({ list, canEdit, onSave }: HandoverPanelPr
   if (list.handover) {
     return (
       <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
-        <div className="mb-4 grid grid-cols-2 gap-4">
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <h3 className="mb-2 text-sm font-bold">Tanda Tangan Admin</h3>
             <div className="flex min-h-[220px] items-center justify-center overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--surface-soft)]">
@@ -66,11 +66,11 @@ export default function HandoverPanel({ list, canEdit, onSave }: HandoverPanelPr
         </div>
       )}
       <form onSubmit={handleSubmit} className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SignaturePad label="Tanda Tangan Admin" onSign={setSignatureAdmin} disabled={!isReady} />
           <SignaturePad label="Tanda Tangan Driver" onSign={setSignatureDriver} disabled={!isReady} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-[7px]">
             <label className="text-[13px] font-bold text-[var(--text-secondary)]">Nama admin</label>
             <input
@@ -93,7 +93,7 @@ export default function HandoverPanel({ list, canEdit, onSave }: HandoverPanelPr
         {isReady && (
           <button
             type="submit"
-            className="self-start rounded-md bg-teal-700 px-[13px] py-[9px] font-bold text-white hover:bg-teal-800"
+            className="self-start rounded-md bg-teal-700 px-[13px] py-[9px] font-bold text-white hover:bg-teal-800 max-sm:self-center max-sm:w-full max-sm:text-center"
           >
             Selesaikan Serah Terima
           </button>

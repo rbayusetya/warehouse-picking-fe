@@ -130,11 +130,11 @@ export default function DebtPayPage() {
 
         <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
           <h3 className="m-0 mb-3 text-sm font-bold">Serah Terima Pembayaran</h3>
-          <div className="mb-4 grid grid-cols-2 gap-4">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <SignaturePad label="Tanda Tangan Admin" onSign={setSignatureAdmin} />
             <SignaturePad label="Tanda Tangan Driver" onSign={setSignatureDriver} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-[7px]">
               <label className="text-[13px] font-bold text-[var(--text-secondary)]">Nama admin</label>
               <input
@@ -157,7 +157,7 @@ export default function DebtPayPage() {
         <button
           type="submit"
           disabled={loading}
-          className="self-start rounded-md bg-teal-700 px-[13px] py-[9px] font-bold text-white hover:bg-teal-800 disabled:opacity-50"
+          className="self-start rounded-md bg-teal-700 px-[13px] py-[9px] font-bold text-white hover:bg-teal-800 disabled:opacity-50 max-sm:self-center max-sm:w-full max-sm:text-center"
         >
           {loading ? "Memproses..." : "Simpan Pembayaran & Serah Terima"}
         </button>

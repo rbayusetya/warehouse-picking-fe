@@ -62,7 +62,7 @@ export default function UploadPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
+      <div className="mx-auto max-w-2xl rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
         {error && (
           <div className="mb-4 rounded-lg border border-[#fecdca] bg-[#fff1f0] px-4 py-3 text-sm text-[#7a271a]">
             {error}
@@ -91,7 +91,7 @@ export default function UploadPage() {
               className="block w-full max-w-sm mx-auto text-sm text-[var(--muted)] file:mr-3 file:rounded-md file:border-0 file:bg-teal-700 file:px-[13px] file:py-[9px] file:text-sm file:font-bold file:text-white hover:file:bg-teal-800"
             />
           </div>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex items-center justify-center gap-3">
             <button
               type="submit"
               disabled={loading}
