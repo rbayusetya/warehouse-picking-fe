@@ -21,7 +21,7 @@
 - [ ] **Add toast/notification system** — Replace inline error banners with a toast library (e.g. `sonner`)
 - [ ] **Move dashboard stats to server** — Compute stats server-side instead of fetching all lists client-side
 - [ ] **Add confirmation dialogs** — Add `ConfirmModal` for destructive/critical actions (debt payment, handover completion)
-- [ ] **Improve mobile responsiveness** — Polish edge cases in mobile drawer and responsive grids
+- [x] **Improve mobile responsiveness** — Polish edge cases in mobile drawer and responsive grids → Done: buttons centered, grids stack on mobile, responsive padding
 
 ## Done This Session
 
@@ -36,3 +36,4 @@
 - ✅ Handover page fixed — snake_case properties updated to camelCase
 - ✅ Middleware migrated to `proxy.ts` (Next.js 16 convention, no more deprecation warning)
 - ✅ Auth migrated to httpOnly cookie — removed localStorage token, removed frontend cookie-setting, all fetch uses credentials: include
+- ✅ UI responsiveness fixed — upload button centered, grids stack on mobile, responsive padding
