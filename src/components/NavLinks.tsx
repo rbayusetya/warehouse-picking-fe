@@ -19,6 +19,14 @@ interface NavLinksProps {
   unconfirmedCount?: number;
 }
 
+function NavSection({ label }: { label: string }) {
+  return (
+    <span className="mt-3 mb-1 block px-[11px] text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+      {label}
+    </span>
+  );
+}
+
 export default function NavLinks({ onNavigate, unconfirmedCount = 0 }: NavLinksProps) {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -27,16 +35,21 @@ export default function NavLinks({ onNavigate, unconfirmedCount = 0 }: NavLinksP
 
   const isActive = (path: string) => pathname.startsWith(path);
 
-  const linkClass = (path: string) =>
+  const linkClass = (path: string, exact = false) =>
     `flex w-full items-center justify-between gap-[10px] rounded-md px-[11px] py-[10px] text-left text-sm text-[var(--text-secondary)] no-underline ${
-      isActive(path)
+      (exact ? pathname === path : isActive(path))
         ? "bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 font-semibold"
         : "hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-800 dark:hover:text-teal-300"
     }`;
 
+  const chevron = <span className="text-[var(--muted)]">&gt;</span>;
+
+  const isAdmin = user.role === "admin" || user.role === "kepala";
+
   return (
     <nav className="flex flex-col gap-0.5">
-      <Link href="/dashboard" className={linkClass("/dashboard")} onClick={onNavigate}>
+      {/* ── Overview ── */}
+      <Link href="/dashboard" className={linkClass("/dashboard", true)} onClick={onNavigate}>
         <span className="flex items-center gap-2">
           <LayoutDashboard size={16} />
           <span>
@@ -45,66 +58,71 @@ export default function NavLinks({ onNavigate, unconfirmedCount = 0 }: NavLinksP
             <small className="text-[var(--muted)]">Ringkasan</small>
           </span>
         </span>
-        <span className="text-[var(--muted)]">&gt;</span>
+        {chevron}
       </Link>
 
-      {(user.role === "admin" || user.role === "kepala") && (
-        <Link href="/upload" className={linkClass("/upload")} onClick={onNavigate}>
-          <span className="flex items-center gap-2">
-            <Upload size={16} />
-            <span>
-              <strong>Upload Excel</strong>
-              <br />
-              <small className="text-[var(--muted)]">Import</small>
+      {/* ── Picking Flow ── */}
+      {isAdmin && (
+        <>
+          <NavSection label="Picking" />
+          <Link href="/picking" className={linkClass("/picking", true)} onClick={onNavigate}>
+            <span className="flex items-center gap-2">
+              <ClipboardList size={16} />
+              <span>
+                <strong>Picking</strong>
+                <br />
+                <small className="text-[var(--muted)]">Checklist</small>
+              </span>
             </span>
-          </span>
-          <span className="text-[var(--muted)]">&gt;</span>
-        </Link>
+            {chevron}
+          </Link>
+
+          <Link href="/upload" className={linkClass("/upload", true)} onClick={onNavigate}>
+            <span className="flex items-center gap-2">
+              <Upload size={16} />
+              <span>
+                <strong>Upload Excel</strong>
+                <br />
+                <small className="text-[var(--muted)]">Import Data</small>
+              </span>
+            </span>
+            {chevron}
+          </Link>
+        </>
       )}
 
-      {(user.role === "admin" || user.role === "kepala") && (
-        <Link href="/picking" className={linkClass("/picking")} onClick={onNavigate}>
-          <span className="flex items-center gap-2">
-            <ClipboardList size={16} />
-            <span>
-              <strong>Picking</strong>
-              <br />
-              <small className="text-[var(--muted)]">Checklist</small>
+      {/* ── Operations ── */}
+      {isAdmin && (
+        <>
+          <NavSection label="Operasional" />
+          <Link href="/handover" className={linkClass("/handover", true)} onClick={onNavigate}>
+            <span className="flex items-center gap-2">
+              <Handshake size={16} />
+              <span>
+                <strong>Serah Terima</strong>
+                <br />
+                <small className="text-[var(--muted)]">Bukti</small>
+              </span>
             </span>
-          </span>
-          <span className="text-[var(--muted)]">&gt;</span>
-        </Link>
+            {chevron}
+          </Link>
+
+          <Link href="/debts" className={linkClass("/debts", true)} onClick={onNavigate}>
+            <span className="flex items-center gap-2">
+              <DollarSign size={16} />
+              <span>
+                <strong>Hutang Barang</strong>
+                <br />
+                <small className="text-[var(--muted)]">Rekap</small>
+              </span>
+            </span>
+            {chevron}
+          </Link>
+        </>
       )}
 
-      {(user.role === "admin" || user.role === "kepala") && (
-        <Link href="/handover" className={linkClass("/handover")} onClick={onNavigate}>
-          <span className="flex items-center gap-2">
-            <Handshake size={16} />
-            <span>
-              <strong>Serah Terima</strong>
-              <br />
-              <small className="text-[var(--muted)]">Bukti</small>
-            </span>
-          </span>
-          <span className="text-[var(--muted)]">&gt;</span>
-        </Link>
-      )}
-
-      {(user.role === "admin" || user.role === "kepala") && (
-        <Link href="/debts" className={linkClass("/debts")} onClick={onNavigate}>
-          <span className="flex items-center gap-2">
-            <DollarSign size={16} />
-            <span>
-              <strong>Hutang Barang</strong>
-              <br />
-              <small className="text-[var(--muted)]">Rekap</small>
-            </span>
-          </span>
-          <span className="text-[var(--muted)]">&gt;</span>
-        </Link>
-      )}
-
-      <Link href="/history" className={linkClass("/history")} onClick={onNavigate}>
+      {/* ── Audit ── */}
+      <Link href="/history" className={linkClass("/history", true)} onClick={onNavigate}>
         <span className="flex items-center gap-2">
           <History size={16} />
           <span>
@@ -113,12 +131,14 @@ export default function NavLinks({ onNavigate, unconfirmedCount = 0 }: NavLinksP
             <small className="text-[var(--muted)]">Audit</small>
           </span>
         </span>
-        <span className="text-[var(--muted)]">&gt;</span>
+        {chevron}
       </Link>
 
+      {/* ── Dealer ── */}
       {user.role === "dealer" && (
         <>
-          <Link href="/dealer" className={linkClass("/dealer")} onClick={onNavigate}>
+          <NavSection label="Dealer" />
+          <Link href="/dealer" className={linkClass("/dealer", true)} onClick={onNavigate}>
             <span className="flex items-center gap-2">
               <Store size={16} />
               <span>
@@ -127,7 +147,7 @@ export default function NavLinks({ onNavigate, unconfirmedCount = 0 }: NavLinksP
                 <small className="text-[var(--muted)]">Konfirmasi</small>
               </span>
             </span>
-            <span className="text-[var(--muted)]">&gt;</span>
+            {chevron}
           </Link>
           {unconfirmedCount > 0 && (
             <Link
@@ -145,7 +165,7 @@ export default function NavLinks({ onNavigate, unconfirmedCount = 0 }: NavLinksP
                   </small>
                 </span>
               </span>
-              <span className="text-[var(--muted)]">&gt;</span>
+              {chevron}
             </Link>
           )}
         </>
