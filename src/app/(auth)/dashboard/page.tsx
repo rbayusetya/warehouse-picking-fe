@@ -247,17 +247,20 @@ export default function DashboardPage() {
   useEffect(() => {
     const isAdmin = user?.role === "admin" || user?.role === "kepala";
 
-    Promise.all([
-      fetchDashboardStats(),
-      fetchPickingLists(),
-      isAdmin ? fetchDealerItems() : Promise.resolve([]),
-    ])
-      .then(([s, l, d]) => {
+    // Fetch stats + lists first (required)
+    Promise.all([fetchDashboardStats(), fetchPickingLists()])
+      .then(([s, l]) => {
         setStats(s);
         setLists(l);
-        setDealerItems(d);
       })
       .catch((e) => setError(e.message));
+
+    // Dealer items are optional — don't let failure break the dashboard
+    if (isAdmin) {
+      fetchDealerItems()
+        .then(setDealerItems)
+        .catch(() => setDealerItems([]));
+    }
   }, [user]);
 
   const [filters, setFilters] = useState<Record<string, string>>({
