@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.git/
+.env*
+.eslint*
+*.md
+Dockerfile
+.dockerignore
+Caddyfile
