@@ -1,0 +1,6 @@
+# Frontend gateway.
+# Binds the container port; the host port is mapped in docker-compose.
+# `frontend` must match the compose service key for this repo.
+:15000 {
+	reverse_proxy frontend:3000
+}
